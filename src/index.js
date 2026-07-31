@@ -422,6 +422,131 @@ async function readOrder(request, env, receptionNumber) {
     order,
   });
 }
+function parseBirthdate(value) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+
+  if (!/^\d{8}$/.test(digits)) {
+    throw new Error("生年月日は19750405のような8桁で入力してください");
+  }
+
+  const year = Number(digits.slice(0, 4));
+  const month = Number(digits.slice(4, 6));
+  const day = Number(digits.slice(6, 8));
+
+  const solar = Solar.fromYmd(year, month, day);
+  const normalized =
+    `${String(year).padStart(4, "0")}` +
+    `${String(month).padStart(2, "0")}` +
+    `${String(day).padStart(2, "0")}`;
+
+  if (solar.toYmd().replaceAll("-", "") !== normalized) {
+    throw new Error("存在しない生年月日です");
+  }
+
+  return {
+    year,
+    month,
+    day,
+    normalized,
+    solar
+  };
+}
+
+function countFiveElements(values) {
+  const counts = {
+    木: 0,
+    火: 0,
+    土: 0,
+    金: 0,
+    水: 0
+  };
+
+  for (const value of values) {
+    for (const element of String(value)) {
+      if (Object.hasOwn(counts, element)) {
+        counts[element] += 1;
+      }
+    }
+  }
+
+  return counts;
+}
+
+async function calculateShichusuimei(request, env) {
+  if (!isAuthorized(request, env)) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "認証に失敗しました"
+      },
+      401
+    );
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse(
+      {
+        success: false,
+        error: "JSON本文を確認してください"
+      },
+      400
+    );
+  }
+
+  try {
+    const parsed = parseBirthdate(body.birthdate);
+    const lunarDate = parsed.solar.getLunar();
+    const eightChar = lunarDate.getEightChar();
+
+    const pillars = {
+      year: eightChar.getYear(),
+      month: eightChar.getMonth(),
+      day: eightChar.getDay()
+    };
+
+    const fiveElements = {
+      year: eightChar.getYearWuXing(),
+      month: eightChar.getMonthWuXing(),
+      day: eightChar.getDayWuXing()
+    };
+
+    return jsonResponse({
+      success: true,
+      fortune_type: "四柱推命",
+      birthdate: parsed.normalized,
+      calculation: {
+        year_pillar: pillars.year,
+        month_pillar: pillars.month,
+        day_pillar: pillars.day,
+        day_master: eightChar.getDayGan(),
+        five_elements_by_pillar: fiveElements,
+        five_element_balance: countFiveElements(
+          Object.values(fiveElements)
+        ),
+        hidden_stems: {
+          year: eightChar.getYearHideGan(),
+          month: eightChar.getMonthHideGan(),
+          day: eightChar.getDayHideGan()
+        }
+      }
+    });
+  } catch (error) {
+    return jsonResponse(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error)
+      },
+      400
+    );
+  }
+}
 
 export default {
   async fetch(request, env) {
@@ -477,7 +602,12 @@ export default {
           receptionNumber
         );
       }
-
+if (
+  request.method === "POST" &&
+  path === "/fortune/shichusuimei"
+) {
+  return await calculateShichusuimei(request, env);
+}    
       return jsonResponse(
         { error: "指定された処理はありません" },
         404
