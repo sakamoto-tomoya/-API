@@ -1,3 +1,7 @@
+import lunar from "lunar-javascript";
+
+const { Solar } = lunar;
+
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
