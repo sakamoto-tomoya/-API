@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "uranai-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-30",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "uranai-orders",
+      "database_id": "53c15bb5-d3a0-425b-9bda-65672f41934f"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "うらない官邸"
+    }
+  ]
+}
