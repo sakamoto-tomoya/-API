@@ -548,7 +548,38 @@ async function calculateShichusuimei(request, env) {
   }
 }
 
+function calculateKyuseikigaku(birthdate) {
+  const { year, month, day } = parseBirthdate(birthdate);
 
+  const solar = Solar.fromYmd(year, month, day);
+  const lunar = solar.getLunar();
+
+  const yearNineStar = lunar.getYearNineStar(2);
+  const monthNineStar = lunar.getMonthNineStar(2);
+  const dayNineStar = lunar.getDayNineStar();
+
+  return {
+    birthdate,
+    year_star: {
+      name: yearNineStar.toString(),
+      number: yearNineStar.getNumber(),
+      element: yearNineStar.getWuXing(),
+      direction: yearNineStar.getPositionDesc()
+    },
+    month_star: {
+      name: monthNineStar.toString(),
+      number: monthNineStar.getNumber(),
+      element: monthNineStar.getWuXing(),
+      direction: monthNineStar.getPositionDesc()
+    },
+    day_star: {
+      name: dayNineStar.toString(),
+      number: dayNineStar.getNumber(),
+      element: dayNineStar.getWuXing(),
+      direction: dayNineStar.getPositionDesc()
+    }
+  };
+}
 
 
 
