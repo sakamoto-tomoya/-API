@@ -646,6 +646,38 @@ if (
 ) {
   return await calculateShichusuimei(request, env);
 }    
+      if (
+        request.method === "POST" &&
+        path === "/fortune/kyuseikigaku"
+      ) {
+        if (!isAuthorized(request, env)) {
+          return jsonResponse(
+            { error: "認証に失敗しました" },
+            401
+          );
+        }
+
+        const body = await request.json();
+        const birthdate = body.birthdate;
+
+        if (!birthdate) {
+          return jsonResponse(
+            { error: "birthdateは必須です" },
+            400
+          );
+        }
+
+        const calculation =
+          calculateKyuseikigaku(birthdate);
+
+        return jsonResponse({
+          success: true,
+          fortune_type: "九星気学",
+          birthdate,
+          calculation,
+        });
+      }
+      
       return jsonResponse(
         { error: "指定された処理はありません" },
         404
